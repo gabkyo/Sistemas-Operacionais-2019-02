@@ -6,42 +6,46 @@
 #include<sys/wait.h> 
 #include <stdbool.h>
 
-bool errorLog(int status){
+const char prefixo[]="gsh> ";
+
+bool errorLog(int status,bool mensagem){//codigos de erro retorna se o processo deve continuar ou nao
     switch(status){
         case 1: //nao foi possivel ler linha
-            printf("/nNão foi possivel ler a linha.");
+            printf("/n1.Não foi possivel ler a linha.");
             break;
         case 2:
-            printf("/nErro de alocação.");
+            printf("/n2.Erro de alocação.");
             break;
 
     }
     return true;
 }
 
-int lerComando(char *linha){
-    int contador=0;
-    char **args,*token;
-    args=malloc(2*sizeof(char*));
-    if(!args){
-        free(args);
-        return 2;
+char *remove_substr(char *str,char *substr){//retorna copia de str sem primeira incidencia de substr
+    char *end, *beg,*retorno;
+    int tamanho,pos=0;
+    beg=strstr(str,substr);
+    if(beg==NULL){
+        return str;
     }
-    token=strtok(linha," ");
-    while(token){
-        strcpy(args[contador],token);
-        contador++;
-        args=realloc(args,(contador+2)*sizeof(char*));
-        token=strtok(linha," ");
+    end=beg+strlen(substr);
+    tamanho=strlen(str)-strlen(substr)+1;
+    retorno=(char*)malloc(tamanho*sizeof(char));
+    tamanho=strlen(str);
+    for(int i=0;i<tamanho;i++){
+        if(i<beg || i>end){
+            retorno[pos]=str[i];
+            pos++;
+        }
     }
-    if(contador<2){
-        return 0;
-    }
+    return retorno; 
+}
 
+int lerComando(char *comando){ //interpreta 1 comando / retorna errorcode
     return 0;
 }
 
-char *lerlinha(){
+char *lerlinha(){//le ate eof ou \n e retorna o que leu
     char *linha,c;
     int pos=0,len=1;
     linha=(char*)malloc((len)*sizeof(char));
@@ -56,18 +60,46 @@ char *lerlinha(){
     return linha;
 }
 
-int commandLoop(){
-    char *linha,c;
-    int status=0,len,pos;
-    bool ok=true;
-    do{
-        printf("gsh> ");
-        linha=lerlinha();
-        if(strlen(linha)>5){
-            status=lerComando(linha);
+int interpretar(char *linha){ //divide linha em comandos e excuta os comandos / retorna codigo de erro
+    char **tokens,*temp;
+    int codigo=0,tamanho=0,pos;
+    if(strchr(linha,'#')==NULL){//um comando
+        return lerComando(linha);
+    }else{
+        
+        temp=strtok(linha,'#');
+        while(temp!=NULL){
+            tamanho++;
+            tokens=(char**)realloc(tokens,tamanho*(sizeof(char*)));
+            tokens[pos]=temp;
+            pos++;
+            temp=strtok(linha,'#');
         }
-        ok=errorLog(status);
+        tamanho++;
+        tokens=(char**)realloc(tokens,tamanho*(sizeof(char*)));
+        strcpy(tokens[pos],linha);
+    }
+    return codigo;
+}
+
+int commandLoop(){
+    char *linha,*temp;
+    int status=0,pos,end;//status codigo de erro
+    bool ok=true;//se deve continuar rodadndo
+    do{
+        printf(prefixo);
+        linha=lerlinha();
+        temp=remove_substr(linha,prefixo);
         free(linha);
+        linha=temp; temp=NULL;
+        if(strlen(linha)<1){
+            status=1;
+        }else{
+            status=interpretar(linha);
+        }
+        ok=errorLog(status,true);
+        free(linha);
+        status=0;
     }while(ok);
     return 0;
 }
