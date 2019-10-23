@@ -3,7 +3,6 @@
 #include<stdlib.h> 
 #include<unistd.h>
 #include<sys/types.h> 
-#include<sys/wait.h> 
 #include <stdbool.h>
 
 const char prefixo[]="gsh> ";
@@ -11,12 +10,15 @@ const char prefixo[]="gsh> ";
 bool errorLog(int status,bool mensagem){//codigos de erro retorna se o processo deve continuar ou nao
     switch(status){
         case 1: //nao foi possivel ler linha
-            printf("/n1.Não foi possivel ler a linha.");
+            if(mensagem){
+                printf("/n1.Não foi possivel ler a linha.");
+            }
             break;
         case 2:
-            printf("/n2.Erro de alocação.");
+            if(mensagem){
+                printf("/n2.Erro de alocação.");
+            }
             break;
-
     }
     return true;
 }
@@ -63,6 +65,7 @@ char *lerlinha(){//le ate eof ou \n e retorna o que leu
 int interpretar(char *linha){ //divide linha em comandos e excuta os comandos / retorna codigo de erro
     char **tokens,*temp;
     int codigo=0,tamanho=0,pos;
+    bool continua=true;
     if(strchr(linha,'#')==NULL){//um comando
         return lerComando(linha);
     }else{
@@ -78,8 +81,16 @@ int interpretar(char *linha){ //divide linha em comandos e excuta os comandos / 
         tamanho++;
         tokens=(char**)realloc(tokens,tamanho*(sizeof(char*)));
         strcpy(tokens[pos],linha);
+        for (int i = 0; i < tamanho; i++){
+            codigo=lerComando(tokens[i]);
+            continua=errorLog(codigo,false);
+            if(!continua){
+                return codigo;
+            }
+        }
+        
     }
-    return codigo;
+    return 0;
 }
 
 int commandLoop(){
