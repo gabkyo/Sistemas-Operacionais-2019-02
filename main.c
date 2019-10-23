@@ -1,10 +1,10 @@
 #include<stdio.h> 
 #include<string.h> 
 #include<stdlib.h> 
-#include<unistd.h> 
-#include<bool.h>
+#include<unistd.h>
 #include<sys/types.h> 
 #include<sys/wait.h> 
+#include <stdbool.h>
 
 bool errorLog(int status){
     switch(status){
@@ -22,7 +22,7 @@ bool errorLog(int status){
 int lerComando(char *linha){
     int contador=0;
     char **args,*token;
-    args=malloc(sizeof(char*));
+    args=malloc(2*sizeof(char*));
     if(!args){
         free(args);
         return 2;
@@ -31,31 +31,44 @@ int lerComando(char *linha){
     while(token){
         strcpy(args[contador],token);
         contador++;
-        args=realloc(args,(contador+1)*sizeof(char*));
+        args=realloc(args,(contador+2)*sizeof(char*));
         token=strtok(linha," ");
     }
-    if(contador==0){
-        return 1;
+    if(contador<2){
+        return 0;
     }
 
     return 0;
 }
 
+char *lerlinha(){
+    char *linha,c;
+    int pos=0,len=1;
+    linha=(char*)malloc((len)*sizeof(char));
+    c=getchar();
+    while(c!=EOF && c!='\n'){
+        len++;
+        linha=(char*)malloc((len)*sizeof(char));
+        linha[pos]=c;
+        c=getchar();
+        pos++;
+    }
+    return linha;
+}
+
 int commandLoop(){
-    char *linha;
-    size_t len=0;
-    int status=0;
+    char *linha,c;
+    int status=0,len,pos;
     bool ok=true;
     do{
         printf("gsh> ");
-        if(fgetline(linha,&len,stdin)!=-1){
+        linha=lerlinha();
+        if(strlen(linha)>5){
             status=lerComando(linha);
-        }else status=1;
+        }
         ok=errorLog(status);
         free(linha);
     }while(ok);
-    
-    
     return 0;
 }
 
