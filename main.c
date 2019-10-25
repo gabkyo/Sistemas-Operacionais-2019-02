@@ -25,7 +25,7 @@ bool errorLog(int status,bool mensagem){//codigos de erro retorna se o processo 
 
 char *remove_substr(char *str,char *substr){//retorna copia de str sem primeira incidencia de substr
     char *end, *beg,*retorno;
-    int tamanho,pos=0;
+    int tamanho,pos=0,b,e;
     beg=strstr(str,substr);
     if(beg==NULL){
         return str;
@@ -34,8 +34,10 @@ char *remove_substr(char *str,char *substr){//retorna copia de str sem primeira 
     tamanho=strlen(str)-strlen(substr)+1;
     retorno=(char*)malloc(tamanho*sizeof(char));
     tamanho=strlen(str);
-    for(int i=0;i<tamanho;i++){
-        if(i<beg || i>end){
+    b=(int)(beg-str[0]);
+    e=(int)(end-str[0]);
+    for(int i=0;i<i+tamanho;i++){
+        if(i<b || i>e){
             retorno[pos]=str[i];
             pos++;
         }
@@ -44,53 +46,44 @@ char *remove_substr(char *str,char *substr){//retorna copia de str sem primeira 
 }
 
 int lerComando(char *comando){ //interpreta 1 comando / retorna errorcode
+    printf(comando);
+    printf("\n");
     return 0;
 }
 
 char *lerlinha(){//le ate eof ou \n e retorna o que leu
-    char *linha,c;
-    int pos=0,len=1;
-    linha=(char*)malloc((len)*sizeof(char));
-    c=getchar();
-    while(c!=EOF && c!='\n'){
-        len++;
-        linha=(char*)malloc((len)*sizeof(char));
-        linha[pos]=c;
-        c=getchar();
-        pos++;
+    char *linha=malloc(300*sizeof(char));
+    if(fgets(linha,300,stdin)==NULL){
+        free(linha);
+        linha=NULL;
     }
     return linha;
 }
 
 int interpretar(char *linha){ //divide linha em comandos e excuta os comandos / retorna codigo de erro
     char **tokens,*temp;
-    int codigo=0,tamanho=0,pos;
-    bool continua=true;
-    if(strchr(linha,'#')==NULL){//um comando
-        return lerComando(linha);
+    int tamanho=0;
+    temp=strchr(linha,'#');
+    if (temp==NULL){
+        lerComando(linha);
     }else{
-        
-        temp=strtok(linha,'#');
-        while(temp!=NULL){
+        temp=strtok(linha,"#");
+        while (temp!=NULL){
             tamanho++;
-            tokens=(char**)realloc(tokens,tamanho*(sizeof(char*)));
-            tokens[pos]=temp;
-            pos++;
-            temp=strtok(linha,'#');
+            tokens=realloc(tokens,tamanho*sizeof(char*));
+            tokens[tamanho-1]=temp;
+            temp=strtok(NULL,"#");
         }
-        tamanho++;
-        tokens=(char**)realloc(tokens,tamanho*(sizeof(char*)));
-        strcpy(tokens[pos],linha);
-        for (int i = 0; i < tamanho; i++){
-            codigo=lerComando(tokens[i]);
-            continua=errorLog(codigo,false);
-            if(!continua){
-                return codigo;
-            }
+        for (int i = 0; i < tamanho; i++)
+        {
+            lerComando(tokens[i]);
+            free(tokens[i]);
         }
-        
+        free(tokens);
+        free(temp);
     }
-    return 0;
+    
+    
 }
 
 int commandLoop(){
