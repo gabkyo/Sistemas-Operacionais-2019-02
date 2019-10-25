@@ -23,29 +23,22 @@ bool errorLog(int status,bool mensagem){//codigos de erro retorna se o processo 
     return true;
 }
 
-char *remove_substr(char *str,char *substr){//retorna copia de str sem primeira incidencia de substr
-    char *end, *beg,*retorno;
-    int tamanho,pos=0,b,e;
-    beg=strstr(str,substr);
-    if(beg==NULL){
-        return str;
-    }
-    end=beg+strlen(substr);
-    tamanho=strlen(str)-strlen(substr)+1;
-    retorno=(char*)malloc(tamanho*sizeof(char));
-    tamanho=strlen(str);
-    b=(int)(beg-str[0]);
-    e=(int)(end-str[0]);
-    for(int i=0;i<i+tamanho;i++){
-        if(i<b || i>e){
-            retorno[pos]=str[i];
-            pos++;
-        }
-    }
-    return retorno; 
+int mywait(){
+
+}
+
+int clean_and_die(){
+    
 }
 
 int lerComando(char *comando){ //interpreta 1 comando / retorna errorcode
+    int tamanho=strlen(comando);
+    if(comando[0]==' '){
+        for (int i = 1; i <= tamanho; i++){
+            comando[i-1]=comando[i];
+        }
+        
+    }
     printf(comando);
     printf("\n");
     return 0;
@@ -57,33 +50,29 @@ char *lerlinha(){//le ate eof ou \n e retorna o que leu
         free(linha);
         linha=NULL;
     }
+    if(linha[strlen(linha)-1]=='\n'){
+        linha[strlen(linha)-1]='\0';
+    }
     return linha;
 }
 
 int interpretar(char *linha){ //divide linha em comandos e excuta os comandos / retorna codigo de erro
-    char **tokens,*temp;
-    int tamanho=0;
-    temp=strchr(linha,'#');
-    if (temp==NULL){
-        lerComando(linha);
+    char *token;
+    int tamanho=0,codigo;
+    token=strchr(linha,'#');
+    if(!token){ //um comando
+        return lerComando(linha);
     }else{
-        temp=strtok(linha,"#");
-        while (temp!=NULL){
-            tamanho++;
-            tokens=realloc(tokens,tamanho*sizeof(char*));
-            tokens[tamanho-1]=temp;
-            temp=strtok(NULL,"#");
+        token=strtok(linha,"#");
+        while (token){
+            codigo=lerComando(token);
+            if(codigo!=0 && !errorLog(codigo,false)){ //codigo diferente de 0 e o programa nao pode continuar
+                return codigo;
+            }
+            token=strtok(NULL,"#");
         }
-        for (int i = 0; i < tamanho; i++)
-        {
-            lerComando(tokens[i]);
-            free(tokens[i]);
-        }
-        free(tokens);
-        free(temp);
+        
     }
-    
-    
 }
 
 int commandLoop(){
@@ -93,9 +82,6 @@ int commandLoop(){
     do{
         printf(prefixo);
         linha=lerlinha();
-        temp=remove_substr(linha,prefixo);
-        free(linha);
-        linha=temp; temp=NULL;
         if(strlen(linha)<1){
             status=1;
         }else{
